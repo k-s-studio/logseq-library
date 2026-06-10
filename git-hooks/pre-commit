@@ -11,6 +11,13 @@
 # Redirect output to stderr, uncomment for more output for debugging
 # exec 1>&2
 
+# Never block on an interactive prompt. Logseq runs this hook as a subprocess
+# with no terminal, so a credential or SSH-passphrase prompt would hang the
+# commit forever. Fail fast instead. (Only set GIT_SSH_COMMAND if the user
+# hasn't already customised it.)
+export GIT_TERMINAL_PROMPT=0
+[ -z "${GIT_SSH_COMMAND}" ] && export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
+
 # Safety check: bail out if we're somehow not inside a git work tree.
 # (Avoids running git plumbing in an unexpected directory.)
 if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]; then
@@ -29,15 +36,28 @@ if [ -f "${GIT_DIR}/MERGE_HEAD" ] || [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "$
     exit 0
 fi
 
-output=$(git pull --no-rebase)
+# Pull remote changes before committing. Capture stdout+stderr together with
+# the exit code so we can react to a failed pull instead of silently
+# committing on top of a broken sync.
+output=$(git pull --no-rebase 2>&1)
+rc=$?
 
-# Handle non error output as otherwise it gets shown with any exit code by logseq
-if [ "$output" = "Already up to date." ]; then
-    # no output
-    :
-else
-    # probably error print it to screen
+if [ "$rc" -ne 0 ]; then
+    # The most common failure in the Logseq flow: the file you just edited
+    # also changed on the remote, so git refuses to merge over your
+    # uncommitted changes ("Your local changes would be overwritten by
+    # merge"). We still let this commit through so your edits are never lost,
+    # but the subsequent push will be rejected until you reconcile. Make that
+    # loud and actionable rather than silent.
+    echo "pre-commit: 'git pull' failed (exit ${rc}). Committing LOCALLY only."
+    echo "pre-commit: your edits are safe, but the push will be rejected until you reconcile."
+    echo "pre-commit: open a terminal in your graph folder, run 'git pull', resolve any"
+    echo "pre-commit: conflicts, then let Logseq commit again (or push from the terminal)."
+    echo "--- git pull output ---"
     echo "${output}"
 fi
+# On success we deliberately stay quiet: no noisy notification on every
+# commit, and no locale-fragile matching of git's "Already up to date."
+# wording (which only ever matched English).
 
 git add -A
