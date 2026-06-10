@@ -11,6 +11,24 @@
 # Redirect output to stderr, uncomment for more output for debugging
 # exec 1>&2
 
+# Safety check: bail out if we're somehow not inside a git work tree.
+# (Avoids running git plumbing in an unexpected directory.)
+if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]; then
+    echo "pre-commit: not inside a git work tree, skipping auto-pull."
+    exit 0
+fi
+
+# Safety check: if a merge or rebase is already in progress, do NOT pull on
+# top of it. Pulling now would stack new changes onto unresolved conflicts.
+# Tell the user to finish resolving first, then let this commit through.
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+if [ -f "${GIT_DIR}/MERGE_HEAD" ] || [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
+    echo "pre-commit: merge/rebase in progress, skipping auto-pull."
+    echo "pre-commit: please resolve the conflict and finish the merge/rebase first."
+    git add -A
+    exit 0
+fi
+
 output=$(git pull --no-rebase)
 
 # Handle non error output as otherwise it gets shown with any exit code by logseq
