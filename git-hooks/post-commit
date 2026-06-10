@@ -1,3 +1,21 @@
 #!/bin/sh
+#
+# Push the freshly-made commit to the remote.
+#
+# Use HEAD instead of a hardcoded branch name so repos whose default branch
+# is 'master' (or anything other than 'main') push correctly.
 
-git push origin main
+# Don't hang on an interactive credential prompt (see pre-commit for rationale).
+export GIT_TERMINAL_PROMPT=0
+
+output=$(git push origin HEAD 2>&1)
+rc=$?
+
+if [ "$rc" -ne 0 ]; then
+    echo "post-commit: 'git push' failed (exit ${rc})."
+    echo "post-commit: if the push was rejected, the remote has changes you don't have yet."
+    echo "post-commit: open a terminal in your graph folder, run 'git pull' to reconcile,"
+    echo "post-commit: then push again."
+    echo "--- git push output ---"
+    echo "${output}"
+fi
