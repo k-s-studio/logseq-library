@@ -11,12 +11,10 @@
 # Redirect output to stderr, uncomment for more output for debugging
 # exec 1>&2
 
-# Never block on an interactive prompt. Logseq runs this hook as a subprocess
-# with no terminal, so a credential or SSH-passphrase prompt would hang the
-# commit forever. Fail fast instead. (Only set GIT_SSH_COMMAND if the user
-# hasn't already customised it.)
+# Never block on an interactive credential prompt. Logseq runs this hook as a
+# subprocess with no terminal, so an HTTPS username/password (or token) prompt
+# would hang the commit forever. Fail fast instead.
 export GIT_TERMINAL_PROMPT=0
-[ -z "${GIT_SSH_COMMAND}" ] && export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
 
 # Safety check: bail out if we're somehow not inside a git work tree.
 # (Avoids running git plumbing in an unexpected directory.)

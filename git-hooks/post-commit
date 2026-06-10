@@ -5,9 +5,8 @@
 # Use HEAD instead of a hardcoded branch name so repos whose default branch
 # is 'master' (or anything other than 'main') push correctly.
 
-# Don't hang on an interactive prompt (see pre-commit for rationale).
+# Don't hang on an interactive credential prompt (see pre-commit for rationale).
 export GIT_TERMINAL_PROMPT=0
-[ -z "${GIT_SSH_COMMAND}" ] && export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
 
 output=$(git push origin HEAD 2>&1)
 rc=$?
