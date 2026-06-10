@@ -36,8 +36,11 @@ fi
 
 # Pull remote changes before committing. Capture stdout+stderr together with
 # the exit code so we can react to a failed pull instead of silently
-# committing on top of a broken sync.
-output=$(git pull --no-rebase 2>&1)
+# committing on top of a broken sync. --no-edit keeps a resulting merge commit
+# from opening an editor if this hook is ever run with a terminal attached
+# (e.g. a manual `git commit`); in Logseq's no-TTY subprocess git already
+# skips the editor, so this is just belt-and-suspenders.
+output=$(git pull --no-rebase --no-edit 2>&1)
 rc=$?
 
 if [ "$rc" -ne 0 ]; then
@@ -45,10 +48,11 @@ if [ "$rc" -ne 0 ]; then
     # also changed on the remote, so git refuses to merge over your
     # uncommitted changes ("Your local changes would be overwritten by
     # merge"). We still let this commit through so your edits are never lost,
-    # but the subsequent push will be rejected until you reconcile. Make that
-    # loud and actionable rather than silent.
+    # but the pull failure means the next push will likely fail too — rejected
+    # if the remote has advanced, or for the same auth/network reason the pull
+    # hit. Make that loud and actionable rather than silent.
     echo "pre-commit: 'git pull' failed (exit ${rc}). Committing LOCALLY only."
-    echo "pre-commit: your edits are safe, but the push will be rejected until you reconcile."
+    echo "pre-commit: your edits are safe, but the next push will likely fail until you reconcile."
     echo "pre-commit: open a terminal in your graph folder, run 'git pull', resolve any"
     echo "pre-commit: conflicts, then let Logseq commit again (or push from the terminal)."
     echo "--- git pull output ---"
