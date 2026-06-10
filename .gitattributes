@@ -1,0 +1,13 @@
+# Use the "union" merge driver for text notes so that concurrent edits on
+# two devices are concatenated instead of producing conflict markers. This
+# fits Logseq's append-heavy journals/pages well.
+#
+# Caveats:
+#   - union keeps BOTH sides of a conflicting hunk, so it can leave duplicate
+#     lines you may need to tidy up later.
+#   - it cannot resolve genuinely contradictory edits to the same line.
+#   - apply it ONLY to text files. Never union-merge assets/binaries
+#     (images, PDFs, etc.) — concatenation would corrupt them. That's why we
+#     scope this to *.md / *.org rather than the broader `*`.
+*.md  merge=union
+*.org merge=union

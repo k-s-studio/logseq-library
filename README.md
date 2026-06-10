@@ -56,7 +56,7 @@ This repo aims to help Logseq users to sync their data via Git and GitHub.
     <h6> Self Managed Sync Diagram, by @danzu</h6>
 </div>
 
-From the above diagram, it's pretty obvious that **Git** is the most robust way to sync your graph. iCloud is slow and problematic, and [Syncthing](https://syncthing.net/downloads/) is not available on iOS/iPadOS.
+From the above diagram, it's pretty obvious that **Git** is the most robust way to sync your graph. iCloud is slow and problematic. [Syncthing](https://syncthing.net/downloads/) has no first-party iOS/iPadOS app, but it can be used there through a compatible third-party client such as [Möbius Sync](https://www.mobiussync.com/) — see [#40](https://github.com/charliie-dev/Logseq-Git-Sync-101/issues/40) for a community-tested setup.
 
 However, Git is quite scary for non-programmers, so this doc is here to help!
 
@@ -82,7 +82,7 @@ Please check [macOS](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/
 
 ### <img src="https://raw.githubusercontent.com/CharlesChiuGit/Logseq-Git-Sync-101/main/src/Apple.svg" width="25"/> For iOS/iPadOS users
 
-Please check [iOS/iPadOS](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/For-iOS-iPadOS-users).
+Please check [iOS/iPadOS](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/For-iOS-iPadOS-users-(Working-Copy)).
 
 ### <img src="https://raw.githubusercontent.com/CharlesChiuGit/Logseq-Git-Sync-101/main/src/android.svg" width="25"/> For Android users
 
@@ -106,6 +106,7 @@ Please check [FAQ](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/%F
 
 ## Change log
 
+- 2026-06-11: Issue cleanup. Fixed dead GitHub docs links (`set-up-git`) and the `ssh -T git@github.com` test command in [Workflow](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/%F0%9F%AA%9C-Workflow)/[FAQ](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/%F0%9F%92%A5-FAQ); added FAQ entries for SSH-over-443 (blocked port 22), HTTPS auth inside Logseq, Snap `ssh-keys` permission, and how pulls are automated; clarified the iOS Working Copy shortcut steps; added optional `.gitattributes` (`merge=union`) guidance; hardened `git-hooks/pre-commit` with merge/rebase guards; noted [Möbius Sync](https://www.mobiussync.com/) for Syncthing on iOS; and listed related community tools in [Home](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/Home).
 - 2024-04-18: Add ssh config in [Workflow](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/%F0%9F%AA%9C-Workflow) to avoid [Permission denied:(publickey)](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/%F0%9F%92%A5-FAQ#how-to-fix-error-permission-deniedpublickey) issue.
 - 2023-12-27: Fix [For Android users](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/For-Android-users) `Termux` path to `~/storage/shared` to avoid issue#34.
 - 2023-11-21: Update [For iOS/iPadOS users (Working-Copy)](https://github.com/CharlesChiuGit/Logseq-Git-Sync-101/wiki/For-iOS-iPadOS-users-(Working-Copy)) for updated version of Working Copy.
