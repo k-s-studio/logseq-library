@@ -11,3 +11,4 @@
 # Example:
 # MyGraphA graphs/MyGraphA
 # MyGraphB graphs/MyGraphB
+_sample graphs/_sample
