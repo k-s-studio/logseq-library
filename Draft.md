@@ -1,0 +1,11 @@
+/logseq-library (這個目錄，主repo，同步到github)
+- /.git
+- /git-hooks
+- /Android-scripts
+- /MyGraphA (子repo A)
+    - /.git
+    - files...
+- /MyGraphB (子repo B)
+    - /.git
+    - files...
+- ... (繼續擴充)
