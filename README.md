@@ -70,6 +70,7 @@ or call `.\libseq` from inside it). On macOS/Linux/Termux call the scripts in
 |---|---|---|
 | Set up this device | `libseq boot` | `sh sys/bootstrap.sh` |
 | Create a new graph | `libseq add MyGraphC` | `sh sys/add-graph.sh MyGraphC` |
+| Remove a graph | `libseq remove MyGraphC` | `sh sys/remove-graph.sh MyGraphC` |
 
 ## First-time setup on a new device
 
@@ -95,6 +96,28 @@ Creates the `graphs/MyGraphC` branch (with the union-merge `.gitattributes`
 seeded), pushes it to the same remote, clones it into `./MyGraphC` as a real-`.git`
 submodule, and records it in `.gitmodules` on `main`. On your other devices,
 `git pull` on `main` then `libseq boot` to clone it.
+
+## Removing a graph
+
+```sh
+libseq remove MyGraphC        # add -y to skip the confirmation prompt
+```
+
+On this device it deletes the `./MyGraphC` folder, unregisters the submodule
+(gitlink + `.gitmodules` + local config), commits and pushes `main`, and deletes
+the remote branch `graphs/MyGraphC` (the irreversible step — you confirm by
+retyping the name). It then prints the cleanup to run on your **other devices**:
+
+```sh
+cd <libseq>
+git pull
+rm -rf MyGraphC
+git config --remove-section submodule.MyGraphC 2>/dev/null || true
+```
+
+A plain `git pull` can't delete an already-cloned folder, so that `rm -rf` is
+required per device. Also remove the graph from Logseq's UI so it stops
+referencing the old path.
 
 ## Skipping graphs on a device (`.libexclude`)
 
