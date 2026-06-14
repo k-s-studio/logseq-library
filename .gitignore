@@ -1,0 +1,8 @@
+# Graph worktrees live inside this folder but belong to their own branches.
+# They must NOT be tracked by `main` (each contains a .git pointer file, which
+# git would otherwise treat as an embedded repo). ./add-graph.sh appends one
+# line per graph below.
+#
+# Example:
+# /MyGraphA/
+# /MyGraphB/
