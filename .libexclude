@@ -1,0 +1,10 @@
+# Graphs to NOT expand into a worktree on `libseq boot`.
+#
+# Every branch under graphs/* is treated as a graph by default. List a graph
+# name here (the part after graphs/) to skip it — e.g. a template or an
+# archived graph you don't want checked out on this device.
+#
+# One name per line. Blank lines and lines starting with # are ignored.
+#
+# Example:
+# _sample
