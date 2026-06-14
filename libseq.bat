@@ -4,6 +4,7 @@ rem
 rem   libseq boot             set up this device (clones every graph)
 rem   libseq add <GraphName>  create a new graph (branch + submodule)
 rem   libseq remove <GraphName> [-y]  remove a graph (folder + branch + submodule)
+rem   libseq clean [-y]       drop local graphs whose remote branch is gone
 rem
 rem Everything runs through Git Bash so there's no file-association prompt.
 setlocal
@@ -45,9 +46,15 @@ if /i "%CMD%"=="remove" (
     exit /b %errorlevel%
 )
 
+if /i "%CMD%"=="clean" (
+    "%BASH%" "%~dp0sys\clean.sh" "%~2"
+    exit /b %errorlevel%
+)
+
 echo libseq: unknown command "%CMD%". 1>&2
 echo usage: 1>&2
 echo   libseq boot                    set up this device 1>&2
 echo   libseq add ^<GraphName^>          create a new graph 1>&2
 echo   libseq remove ^<GraphName^> [-y]  remove a graph 1>&2
+echo   libseq clean [-y]              drop graphs whose branch is gone 1>&2
 exit /b 1

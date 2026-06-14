@@ -99,8 +99,7 @@ remove-graph: '$name' removed on this device.
 On your OTHER devices, run:
   cd <libseq>
   git pull
-  rm -rf "$name"
-  git config --remove-section submodule.$name 2>/dev/null || true
+  libseq clean        (Windows)   or   sh sys/clean.sh   (macOS/Linux)
 
 Also remove the graph from Logseq's UI so it stops referencing the old path.
 EOF
