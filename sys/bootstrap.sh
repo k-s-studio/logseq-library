@@ -54,8 +54,15 @@ for key in $(git config -f .gitmodules --name-only --get-regexp '^submodule\..*\
         continue
     fi
     if [ -e "$name" ]; then
-        echo "bootstrap: '$name' exists but has no real .git dir — move it aside first. Skipping." >&2
-        continue
+        # A fresh `git clone` leaves an EMPTY placeholder dir for each registered
+        # submodule. Remove it so we can clone into place; only warn if it has
+        # real content we'd otherwise clobber. (rmdir only succeeds when empty.)
+        if rmdir "$name" 2>/dev/null; then
+            :
+        else
+            echo "bootstrap: '$name' exists and is not empty — move it aside first. Skipping." >&2
+            continue
+        fi
     fi
 
     # Independent clone => real .git directory (Logseq-safe).
