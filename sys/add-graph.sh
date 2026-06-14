@@ -37,7 +37,7 @@ if git show-ref --verify --quiet "refs/heads/$branch" || \
 fi
 
 # Make sure hooks are wired up for everyday use even if boot wasn't run yet.
-git config core.hooksPath "$REPO_ROOT/git-hooks"
+git config core.hooksPath "$REPO_ROOT/sys/git-hooks"
 
 # 1. Orphan branch with a clean tree, seeded with the union-merge policy so
 #    concurrent edits on two devices concatenate instead of conflicting.

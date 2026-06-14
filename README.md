@@ -15,7 +15,7 @@ The way to get *both* "one remote" *and* "a `.git` in every graph folder" is
 **Git worktrees**:
 
 - **one** repository, **one** remote;
-- `main` holds the tooling (this README, `sys/`, `git-hooks/`, `.libexclude`);
+- `main` holds the tooling (this README, `sys/` — scripts + `git-hooks/`, `.libexclude`);
 - each graph is its **own branch** under `graphs/*`, checked out as a **worktree**
   into a sibling folder. **Branches are the single source of truth** — there is
   no manifest. The folder name is just the branch with the `graphs/` prefix
@@ -29,11 +29,11 @@ libseq/                        ← main worktree (branch: main), origin = GitHub
 ├─ .gitignore                  ← ignores the graph worktree folders
 ├─ .libexclude                 ← graphs to NOT check out (opt-out list)
 ├─ libseq.bat                  ← Windows entry point (boot / add)
-├─ sys/                        ← all the helper scripts
+├─ sys/                        ← all the tooling
 │  ├─ bootstrap.sh             ←   new-device setup
 │  ├─ add-graph.sh             ←   create a new graph
-│  └─ pull-graph.sh / push-graph.sh  ← Termux (Android) sync
-├─ git-hooks/                  ← pre-commit (pull) + post-commit (push), shared
+│  ├─ git-hooks/               ←   pre-commit (pull) + post-commit (push), shared
+│  └─ Android-scripts/         ←   pull-graph.sh / push-graph.sh (Termux sync)
 ├─ MyGraphA/   ← worktree, branch graphs/MyGraphA, .git pointer → open this in Logseq
 └─ MyGraphB/   ← worktree, branch graphs/MyGraphB
 ```
@@ -100,8 +100,8 @@ Logseq for Android can't run git/hooks, so clone the repo in Termux, run
 `sh sys/bootstrap.sh`, and use the Termux:Widget scripts (set `LIBRARY_DIR` if
 your clone isn't at `storage/documents/libseq`):
 
-- `sys/pull-graph.sh` — pull every graph before editing
-- `sys/push-graph.sh` — commit + push every graph after editing
+- `sys/Android-scripts/pull-graph.sh` — pull every graph before editing
+- `sys/Android-scripts/push-graph.sh` — commit + push every graph after editing
 
 ## Concurrent edits
 

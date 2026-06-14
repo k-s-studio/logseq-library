@@ -9,7 +9,7 @@
 # graph names that should NOT be expanded into worktrees on this checkout.
 #
 # What it does:
-#   1. Points git at the shared hooks (git-hooks/) for ALL worktrees.
+#   1. Points git at the shared hooks (sys/git-hooks/) for ALL worktrees.
 #   2. Checks out one worktree per graphs/* branch (minus .libexclude). Each
 #      worktree folder gets a `.git` pointer file — exactly what Logseq's
 #      auto-commit looks for — and stays isolated to its own branch.
@@ -23,8 +23,8 @@ REPO_ROOT=$(cd "$SYS_DIR/.." && pwd)
 cd "$REPO_ROOT"
 
 # 1. Shared hooks for every worktree (absolute path, device-local in .git/config).
-git config core.hooksPath "$REPO_ROOT/git-hooks"
-echo "bootstrap: hooks enabled (core.hooksPath -> git-hooks)."
+git config core.hooksPath "$REPO_ROOT/sys/git-hooks"
+echo "bootstrap: hooks enabled (core.hooksPath -> sys/git-hooks)."
 
 # Names listed in .libexclude are not expanded (comments / blanks ignored).
 is_excluded() {
