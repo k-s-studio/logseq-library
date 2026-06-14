@@ -3,15 +3,15 @@
 # Termux (Android) push: commit and push every graph's changes. Run from a
 # Termux:Widget after editing in Logseq for Android (which can't run git/hooks).
 #
-# Set LIBRARY_DIR to wherever you cloned logseq-library (then ran ./bootstrap.sh).
+# Set LIBRARY_DIR to wherever you cloned libseq (then ran `sh sys/bootstrap.sh`).
 source bin/source-ssh-agent
-LIBRARY_DIR=${LIBRARY_DIR:-storage/documents/logseq-library}
+LIBRARY_DIR=${LIBRARY_DIR:-storage/documents/libseq}
 
 cd "$LIBRARY_DIR" || { echo "push-graph: cannot cd to $LIBRARY_DIR, aborting" >&2; exit 1; }
 
-while read -r folder branch _; do
-    case "$folder" in '' | \#*) continue ;; esac
-    [ -d "$folder" ] || continue
+# Each graph is a submodule clone listed in .gitmodules.
+for folder in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+    [ -d "$folder/.git" ] || continue
     (
         cd "$folder" || exit 1
         git add -A
@@ -20,4 +20,4 @@ while read -r folder branch _; do
         git diff --cached --quiet || git commit -m "sync from android"
         git push
     ) || echo "push-graph: '$folder' push failed" >&2
-done < graphs.txt
+done

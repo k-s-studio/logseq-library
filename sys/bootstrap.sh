@@ -3,16 +3,13 @@
 # bootstrap.sh — run ONCE on each new device, right after cloning libseq.
 # Invoke via:  libseq boot   (Windows)   or   sh sys/bootstrap.sh
 #
-# Branches are the single source of truth: every branch under graphs/* is a
-# graph, and its folder name is the branch with the graphs/ prefix removed
-# (graphs/MyGraphA -> ./MyGraphA). The only opt-out is .libexclude, which lists
-# graph names that should NOT be expanded into worktrees on this checkout.
-#
-# What it does:
-#   1. Points git at the shared hooks (sys/git-hooks/) for ALL worktrees.
-#   2. Checks out one worktree per graphs/* branch (minus .libexclude). Each
-#      worktree folder gets a `.git` pointer file — exactly what Logseq's
-#      auto-commit looks for — and stays isolated to its own branch.
+# SUBMODULE MODE (form 1: one remote, branch == graph):
+# .gitmodules is the registry of graphs. For each one (minus .libexclude), this
+# clones the graph's branch into its folder as an INDEPENDENT clone — giving it
+# a real `.git` DIRECTORY, which Logseq reuses as-is (it would otherwise rewrite
+# a separate-git-dir pointer file and corrupt things). We deliberately do NOT use
+# `git submodule update`, because that absorbs the git dir into .git/modules and
+# leaves a pointer file behind.
 #
 # Safe to re-run: already-checked-out graphs are skipped.
 
@@ -22,11 +19,9 @@ SYS_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$SYS_DIR/.." && pwd)
 cd "$REPO_ROOT"
 
-# 1. Shared hooks for every worktree (absolute path, device-local in .git/config).
-git config core.hooksPath "$REPO_ROOT/sys/git-hooks"
-echo "bootstrap: hooks enabled (core.hooksPath -> sys/git-hooks)."
+ORIGIN_URL=$(git remote get-url origin)
 
-# Names listed in .libexclude are not expanded (comments / blanks ignored).
+# Names listed in .libexclude are not checked out on this device.
 is_excluded() {
     [ -f "$REPO_ROOT/.libexclude" ] || return 1
     grep -v '^[[:space:]]*#' "$REPO_ROOT/.libexclude" \
@@ -34,28 +29,45 @@ is_excluded() {
         | grep -qx "$1"
 }
 
-git fetch origin --prune
+if [ ! -f .gitmodules ]; then
+    echo "bootstrap: no graphs registered yet. Create one with: libseq add <Name>"
+    exit 0
+fi
+
+git fetch origin --prune --quiet
 
 found=0
-for name in $(git for-each-ref --format='%(refname:lstrip=4)' 'refs/remotes/origin/graphs/*' 2>/dev/null); do
+# Iterate the submodule names recorded in .gitmodules.
+for key in $(git config -f .gitmodules --name-only --get-regexp '^submodule\..*\.path$'); do
     found=1
+    name=$(git config -f .gitmodules "$key")
+    branch=$(git config -f .gitmodules "submodule.$name.branch")
+    [ -n "$branch" ] || branch="graphs/$name"
+
     if is_excluded "$name"; then
         echo "bootstrap: '$name' is in .libexclude, skipping."
         continue
     fi
 
-    if [ -e "$name/.git" ]; then
+    if [ -d "$name/.git" ]; then
         echo "bootstrap: '$name' already checked out."
-    elif [ -e "$name" ]; then
-        echo "bootstrap: '$name' exists but isn't a worktree — move it aside first. Skipping." >&2
-    else
-        git worktree add "$name" "graphs/$name"
-        echo "bootstrap: checked out '$name' (branch graphs/$name)."
+        continue
     fi
+    if [ -e "$name" ]; then
+        echo "bootstrap: '$name' exists but has no real .git dir — move it aside first. Skipping." >&2
+        continue
+    fi
+
+    # Independent clone => real .git directory (Logseq-safe).
+    git clone --quiet -b "$branch" "$ORIGIN_URL" "$name"
+    git -C "$name" config core.hooksPath "$REPO_ROOT/sys/git-hooks"
+    git config "submodule.$name.url" "$ORIGIN_URL"
+    git config "submodule.$name.active" "true"
+    echo "bootstrap: checked out '$name' (branch $branch)."
 done
 
 if [ "$found" -eq 0 ]; then
-    echo "bootstrap: no graphs/* branches on origin yet. Create one with: libseq add <Name>"
+    echo "bootstrap: no graphs registered yet. Create one with: libseq add <Name>"
 fi
 
 echo "bootstrap: done. Open the graph folder(s) in Logseq and start editing."
