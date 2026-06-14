@@ -1,0 +1,4 @@
+[submodule "Test2"]
+	path = Test2
+	url = https://github.com/k-s-studio/logseq-library
+	branch = graphs/Test2
