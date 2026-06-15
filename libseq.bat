@@ -2,8 +2,8 @@
 rem libseq.bat - one entry point for the libseq helpers on Windows.
 rem
 rem   libseq boot             set up this device (clones every graph)
-rem   libseq add <GraphName>  create a new graph (branch + submodule)
-rem   libseq remove <GraphName> [-y]  remove a graph (folder + branch + submodule)
+rem   libseq add <GraphName>  create a new graph (branch)
+rem   libseq remove <GraphName> [-y]  remove a graph (folder + branch)
 rem   libseq clean [-y]       drop local graphs whose remote branch is gone
 rem
 rem Everything runs through Git Bash so there's no file-association prompt.

@@ -9,9 +9,12 @@ LIBRARY_DIR=${LIBRARY_DIR:-storage/documents/libseq}
 
 cd "$LIBRARY_DIR" || { echo "push-graph: cannot cd to $LIBRARY_DIR, aborting" >&2; exit 1; }
 
-# Each graph is a submodule clone listed in .gitmodules.
-for folder in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+# Each graph is an independent clone checked out on a graphs/* branch — discover
+# them by scanning the top-level folders (no registry file needed).
+for folder in */; do
+    folder=${folder%/}
     [ -d "$folder/.git" ] || continue
+    case "$(git -C "$folder" rev-parse --abbrev-ref HEAD 2>/dev/null)" in graphs/*) ;; *) continue ;; esac
     (
         cd "$folder" || exit 1
         git add -A

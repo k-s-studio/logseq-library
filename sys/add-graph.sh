@@ -1,19 +1,19 @@
 #!/bin/sh
 #
-# add-graph.sh — create a brand-new Logseq graph as its own branch + submodule.
+# add-graph.sh — create a brand-new Logseq graph as its own branch.
 # Invoke via:  libseq add <GraphName>   or   sh sys/add-graph.sh <GraphName>
 #
-# SUBMODULE MODE (form 1: one remote, branch == graph):
+# CLONE-AND-IGNORE MODE:
 #   - The graph lives on its own branch graphs/<Name> in the SAME GitHub repo.
 #   - Its folder is an INDEPENDENT CLONE of that branch, so it has a real `.git`
 #     DIRECTORY (not a pointer). This is the crucial bit: Logseq reuses a real
 #     `.git` directory as-is, whereas it rewrites/relocates separate-git-dir
 #     pointer files (which is what corrupted the old worktree layout).
-#   - The superproject records the graph as a true submodule (.gitmodules +
-#     gitlink), so `main` tracks every graph. The submodule is its own repo, so
-#     Logseq messing with one graph can never corrupt the library repo.
+#   - The branch itself is the registry — `main` records NOTHING about the graph,
+#     so this never commits to or pushes main. Other devices pick the graph up on
+#     `libseq boot`, which clones every graphs/* branch.
 #
-# Setup commits bypass the pull/push hooks (-c core.hooksPath=/dev/null) so
+# The init commit bypasses the pull/push hooks (-c core.hooksPath=/dev/null) so
 # first-time creation stays clean and predictable.
 
 set -e
@@ -35,8 +35,7 @@ if [ -e "$name" ]; then
     echo "add-graph: '$name' already exists — pick another name." >&2
     exit 1
 fi
-if git show-ref --verify --quiet "refs/heads/$branch" || \
-   git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
     echo "add-graph: branch '$branch' already exists. Run 'libseq boot' to check it out." >&2
     exit 1
 fi
@@ -61,12 +60,5 @@ git -C "$name" push --quiet -u origin "$branch"
 # 3. Wire the shared hooks into this graph clone so Logseq's auto-commit
 #    pull-before / push-after just works.
 git -C "$name" config core.hooksPath "$REPO_ROOT/sys/git-hooks"
-
-# 4. Register the graph as a true submodule so `main` tracks it.
-"$SYS_DIR/register-submodule.sh" "$name" "$branch" "$ORIGIN_URL"
-git add .gitmodules
-git add -f "$name"
-git $NOHOOK commit --quiet -m "add graph $name (submodule, $branch)"
-git push --quiet origin HEAD
 
 echo "add-graph: '$name' is ready. Open it in Logseq; commits will auto-sync."

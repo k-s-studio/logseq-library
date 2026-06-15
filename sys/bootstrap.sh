@@ -3,13 +3,14 @@
 # bootstrap.sh — run ONCE on each new device, right after cloning libseq.
 # Invoke via:  libseq boot   (Windows)   or   sh sys/bootstrap.sh
 #
-# SUBMODULE MODE (form 1: one remote, branch == graph):
-# .gitmodules is the registry of graphs. For each one (minus .libexclude), this
-# clones the graph's branch into its folder as an INDEPENDENT clone — giving it
-# a real `.git` DIRECTORY, which Logseq reuses as-is (it would otherwise rewrite
-# a separate-git-dir pointer file and corrupt things). We deliberately do NOT use
-# `git submodule update`, because that absorbs the git dir into .git/modules and
-# leaves a pointer file behind.
+# CLONE-AND-IGNORE MODE:
+# Each graph lives on its own branch graphs/<Name> in the SAME GitHub repo. The
+# remote `graphs/*` branches ARE the registry — there's no .gitmodules to keep in
+# sync. For every such branch (minus .libexclude), this clones it into ./<Name>
+# as an INDEPENDENT clone, giving the folder a real `.git` DIRECTORY that Logseq
+# reuses as-is. (A submodule/worktree pointer file would get rewritten by Logseq
+# and corrupt the layout — hence a plain clone.) The folder is ignored by main's
+# whitelist .gitignore, so it never shows up in the library's status.
 #
 # Safe to re-run: already-checked-out graphs are skipped.
 
@@ -29,20 +30,18 @@ is_excluded() {
         | grep -qx "$1"
 }
 
-if [ ! -f .gitmodules ]; then
+git fetch origin --prune --quiet
+
+# The graph registry is simply the set of graphs/* branches on origin.
+branches=$(git ls-remote --heads origin 'graphs/*' | sed 's#.*refs/heads/##')
+
+if [ -z "$branches" ]; then
     echo "bootstrap: no graphs registered yet. Create one with: libseq add <Name>"
     exit 0
 fi
 
-git fetch origin --prune --quiet
-
-found=0
-# Iterate the submodule names recorded in .gitmodules.
-for key in $(git config -f .gitmodules --name-only --get-regexp '^submodule\..*\.path$'); do
-    found=1
-    name=$(git config -f .gitmodules "$key")
-    branch=$(git config -f .gitmodules "submodule.$name.branch")
-    [ -n "$branch" ] || branch="graphs/$name"
+for branch in $branches; do
+    name=${branch#graphs/}
 
     if is_excluded "$name"; then
         echo "bootstrap: '$name' is in .libexclude, skipping."
@@ -54,9 +53,8 @@ for key in $(git config -f .gitmodules --name-only --get-regexp '^submodule\..*\
         continue
     fi
     if [ -e "$name" ]; then
-        # A fresh `git clone` leaves an EMPTY placeholder dir for each registered
-        # submodule. Remove it so we can clone into place; only warn if it has
-        # real content we'd otherwise clobber. (rmdir only succeeds when empty.)
+        # rmdir only succeeds when the dir is empty, so this clears a harmless
+        # placeholder but refuses to clobber a folder with real content.
         if rmdir "$name" 2>/dev/null; then
             :
         else
@@ -68,13 +66,7 @@ for key in $(git config -f .gitmodules --name-only --get-regexp '^submodule\..*\
     # Independent clone => real .git directory (Logseq-safe).
     git clone --quiet -b "$branch" "$ORIGIN_URL" "$name"
     git -C "$name" config core.hooksPath "$REPO_ROOT/sys/git-hooks"
-    git config "submodule.$name.url" "$ORIGIN_URL"
-    git config "submodule.$name.active" "true"
     echo "bootstrap: checked out '$name' (branch $branch)."
 done
-
-if [ "$found" -eq 0 ]; then
-    echo "bootstrap: no graphs registered yet. Create one with: libseq add <Name>"
-fi
 
 echo "bootstrap: done. Open the graph folder(s) in Logseq and start editing."

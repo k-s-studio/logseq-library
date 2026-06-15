@@ -1,7 +1,7 @@
 # Whitelist, not blacklist: `main` ignores EVERYTHING by default and only tracks
-# the libseq tooling listed below. Graph folders are independent submodule clones
-# (their own real .git dir); main references them via the gitlinks recorded in
-# .gitmodules, so the folders themselves stay ignored here.
+# the libseq tooling listed below. Graph folders are independent clones of the
+# graphs/* branches (each with its own real .git dir); main records nothing about
+# them, so the folders just stay ignored here.
 #
 # `/*` is anchored and top-level only, so un-ignoring a directory below is enough
 # to track all of its contents.
@@ -10,7 +10,6 @@
 # ...except the tooling that lives on main:
 !/.gitattributes
 !/.gitignore
-!/.gitmodules
 !/.libexclude
 !/README.md
 !/LICENSE

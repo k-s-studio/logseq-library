@@ -1,4 +1,4 @@
-# Graphs to NOT expand into a worktree on `libseq boot`.
+# Graphs to NOT check out on `libseq boot`.
 #
 # Every branch under graphs/* is treated as a graph by default. List a graph
 # name here (the part after graphs/) to skip it — e.g. a template or an
