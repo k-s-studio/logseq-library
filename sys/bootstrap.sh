@@ -12,7 +12,9 @@
 # and corrupt the layout — hence a plain clone.) The folder is ignored by main's
 # whitelist .gitignore, so it never shows up in the library's status.
 #
-# Safe to re-run: already-checked-out graphs are skipped.
+# Safe to re-run: already-checked-out graphs are skipped. "Already checked out" is
+# decided by the branch recorded inside each folder's .git, not by folder name, so
+# a graph you've renamed locally is recognised and never cloned a second time.
 
 set -e
 
@@ -28,6 +30,19 @@ is_excluded() {
     grep -v '^[[:space:]]*#' "$REPO_ROOT/.libexclude" \
         | sed 's/[[:space:]]//g' \
         | grep -qx "$1"
+}
+
+# Echo the top-level folder already checked out on branch $1 (any name), if any.
+checkout_of_branch() {
+    for d in */; do
+        d=${d%/}
+        [ -d "$d/.git" ] || continue
+        if [ "$(git -C "$d" rev-parse --abbrev-ref HEAD 2>/dev/null)" = "$1" ]; then
+            echo "$d"
+            return 0
+        fi
+    done
+    return 1
 }
 
 git fetch origin --prune --quiet
@@ -48,8 +63,12 @@ for branch in $branches; do
         continue
     fi
 
-    if [ -d "$name/.git" ]; then
-        echo "bootstrap: '$name' already checked out."
+    if existing=$(checkout_of_branch "$branch"); then
+        if [ "$existing" = "$name" ]; then
+            echo "bootstrap: '$name' already checked out."
+        else
+            echo "bootstrap: '$name' already checked out as ./$existing (renamed)."
+        fi
         continue
     fi
     if [ -e "$name" ]; then

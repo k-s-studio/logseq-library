@@ -2,9 +2,10 @@
 rem libseq.bat - one entry point for the libseq helpers on Windows.
 rem
 rem   libseq boot             set up this device (clones every graph)
-rem   libseq add <GraphName>  create a new graph (branch)
+rem   libseq add <GraphName>  create a new graph, or adopt an existing folder
 rem   libseq remove <GraphName> [-y]  remove a graph (folder + branch)
 rem   libseq clean [-y]       drop local graphs whose remote branch is gone
+rem   libseq sync [message]   commit every local graph right now
 rem
 rem Everything runs through Git Bash so there's no file-association prompt.
 setlocal
@@ -37,10 +38,10 @@ if /i "%CMD%"=="boot" (
 
 if /i "%CMD%"=="add" (
     if "%~2"=="" (
-        echo usage: libseq add ^<GraphName^> 1>&2
+        echo usage: libseq add ^<GraphName^> [-y] 1>&2
         exit /b 1
     )
-    "%BASH%" "%~dp0sys\add-graph.sh" "%~2"
+    "%BASH%" "%~dp0sys\add-graph.sh" "%~2" "%~3"
     exit /b %errorlevel%
 )
 
@@ -58,10 +59,16 @@ if /i "%CMD%"=="clean" (
     exit /b %errorlevel%
 )
 
+if /i "%CMD%"=="sync" (
+    "%BASH%" "%~dp0sys\sync.sh" "%~2"
+    exit /b %errorlevel%
+)
+
 echo libseq: unknown command "%CMD%". 1>&2
 echo usage: 1>&2
 echo   libseq boot                    set up this device 1>&2
 echo   libseq add ^<GraphName^>          create a new graph 1>&2
 echo   libseq remove ^<GraphName^> [-y]  remove a graph 1>&2
 echo   libseq clean [-y]              drop graphs whose branch is gone 1>&2
+echo   libseq sync [message]          commit every local graph right now 1>&2
 exit /b 1

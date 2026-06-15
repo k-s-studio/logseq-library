@@ -76,6 +76,7 @@ or call `.\libseq` from inside it). On macOS/Linux/Termux call the scripts in
 | Create a new graph | `libseq add MyGraphC` | `sh sys/add-graph.sh MyGraphC` |
 | Remove a graph | `libseq remove MyGraphC` | `sh sys/remove-graph.sh MyGraphC` |
 | Drop graphs whose branch is gone | `libseq clean` | `sh sys/clean.sh` |
+| Commit every graph right now | `libseq sync` | `sh sys/sync.sh` |
 
 ## First-time setup on a new device
 
@@ -102,6 +103,29 @@ seeded), pushes it to the same remote, and clones it into `./MyGraphC` with a re
 `.git` dir. Nothing is committed to `main` — the branch *is* the record. On your
 other devices, run `libseq boot` to clone it.
 
+### Adopting an existing folder
+
+If `./MyGraphC` **already exists** (e.g. a Logseq graph you created locally),
+`libseq add MyGraphC` adopts it in place instead: it initializes a fresh `.git`
+directory in the folder on the `graphs/MyGraphC` branch, keeps all of the folder's
+current files as the graph's initial commit, seeds the union-merge `.gitattributes`
+(without clobbering one you already have), pushes the branch, and wires up the
+hooks.
+
+If the folder already has its **own `.git`** (a real directory *or* a
+separate-git-dir pointer file), `add` asks first:
+
+```
+add-graph: './MyGraphC' already has its own .git (directory), branch 'main'.
+add-graph: re-initialize it as a libseq graph? The folder's files are kept,
+add-graph: but its current git history is discarded.
+Overwrite? [y/N]
+```
+
+Answer **`n`** (the default) to leave everything untouched, or **`y`** to discard
+that git metadata and re-initialize the folder as a fresh libseq graph (the files
+stay). Pass `-y` (`libseq add MyGraphC -y`) to skip the prompt.
+
 ## Removing a graph
 
 ```sh
@@ -121,6 +145,32 @@ libseq clean        # deletes local graph folders whose branch is gone
 `libseq clean` removes any local graph clone whose `graphs/*` branch no longer
 exists on the remote. Also remove the graph from Logseq's UI so it stops
 referencing the old path.
+
+## Committing every graph now (`libseq sync`)
+
+```sh
+libseq sync                 # or: libseq sync "before shutting down"
+```
+
+Logseq auto-commits a graph only while it's open, on its own schedule. `libseq
+sync` walks **every** local graph clone and commits the ones with pending
+changes immediately — useful before shutting a device down or to force all
+graphs into sync at once. It doesn't re-implement pull/push: each commit fires
+the shared hooks (`pre-commit` pulls + stages, `post-commit` pushes), so a dirty
+graph ends up pulled, committed, and pushed just like a normal Logseq edit.
+Clean graphs are skipped. The optional argument sets the commit message
+(default: `libseq sync <timestamp>`).
+
+## Renaming a graph folder locally
+
+A graph folder's name doesn't matter to git — the remote and branch are recorded
+inside its `.git`, not in the folder name (and `main` tracks nothing about it). So
+you can rename `./MyGraphA` to anything on a device; pull/push, `libseq sync`,
+`libseq clean`, and the Android scripts all read the branch from inside the folder
+and keep working. `libseq boot` recognises the renamed folder by its branch and
+won't clone a duplicate, and `libseq remove MyGraphA` still finds and deletes it.
+The rename is local-only: other devices keep whatever folder name they cloned
+into, since the name is never synced.
 
 ## Skipping graphs on a device (`.libexclude`)
 

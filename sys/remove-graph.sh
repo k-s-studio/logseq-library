@@ -4,9 +4,11 @@
 # Invoke via:  libseq remove <GraphName> [-y]   or   sh sys/remove-graph.sh <GraphName> [-y]
 #
 # It undoes everything `libseq add` set up, on THIS device:
-#   1. deletes the local clone folder ./<Name>
+#   1. deletes the local clone folder (./<Name>, or wherever it was renamed to)
 #   2. deletes the remote branch graphs/<Name>
 # `main` records nothing about graphs, so there's no superproject commit to make.
+# The local clone is found by the branch recorded in its .git, so a folder you've
+# renamed away from <Name> is still removed.
 # Then prints the cleanup to run on OTHER devices (they still have their own local
 # clone, which `libseq clean` removes once the branch is gone).
 #
@@ -33,15 +35,27 @@ branch="graphs/$name"
 remote_exists=no
 git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1 && remote_exists=yes
 
-if [ ! -e "$name" ] && [ "$remote_exists" = no ]; then
-    echo "remove-graph: nothing to remove for '$name' (no local folder or remote branch)." >&2
+# Locate the local clone. Normally ./<Name>, but it may have been renamed — fall
+# back to whichever top-level folder is checked out on graphs/<Name>.
+local_dir=""
+for d in "$name" */; do
+    d=${d%/}
+    [ -d "$d/.git" ] || continue
+    if [ "$(git -C "$d" rev-parse --abbrev-ref HEAD 2>/dev/null)" = "$branch" ]; then
+        local_dir="$d"
+        break
+    fi
+done
+
+if [ -z "$local_dir" ] && [ "$remote_exists" = no ]; then
+    echo "remove-graph: nothing to remove for '$name' (no local clone or remote branch)." >&2
     exit 1
 fi
 
 # Confirm before the irreversible parts.
 if [ "$assume_yes" != yes ]; then
     echo "About to remove graph '$name':"
-    [ -e "$name" ]             && echo "  - delete local folder ./$name"
+    [ -n "$local_dir" ]        && echo "  - delete local folder ./$local_dir"
     [ "$remote_exists" = yes ] && echo "  - DELETE remote branch origin/$branch  (irreversible)"
     printf "Retype the graph name to confirm: "
     read -r reply
@@ -52,9 +66,9 @@ if [ "$assume_yes" != yes ]; then
 fi
 
 # 1. Local clone (content is safe on origin until step 2).
-if [ -e "$name" ]; then
-    rm -rf "$name"
-    echo "remove-graph: deleted ./$name"
+if [ -n "$local_dir" ]; then
+    rm -rf "$local_dir"
+    echo "remove-graph: deleted ./$local_dir"
 fi
 
 # 2. Remote branch — the canonical copy. This is the irreversible step.
