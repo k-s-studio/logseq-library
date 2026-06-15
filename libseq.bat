@@ -9,12 +9,19 @@ rem
 rem Everything runs through Git Bash so there's no file-association prompt.
 setlocal
 
-rem Find Git Bash: prefer one on PATH, then the standard install locations.
+rem Find Git Bash: prefer the standard install locations, then fall back to a
+rem PATH search. We check the install locations first because the WSL launchers
+rem (System32\bash.exe and the WindowsApps\bash.exe Store alias) often appear
+rem earlier on PATH than Git Bash, and they relay into the default WSL distro
+rem instead of running our scripts. The PATH fallback enumerates every bash.exe
+rem on PATH and skips both WSL launchers, so custom Git installs still work.
 set "BASH="
-for %%B in (bash.exe) do if not defined BASH set "BASH=%%~$PATH:B"
-if not defined BASH if exist "%ProgramFiles%\Git\bin\bash.exe" set "BASH=%ProgramFiles%\Git\bin\bash.exe"
+if exist "%ProgramFiles%\Git\bin\bash.exe" set "BASH=%ProgramFiles%\Git\bin\bash.exe"
 if not defined BASH if exist "%ProgramFiles(x86)%\Git\bin\bash.exe" set "BASH=%ProgramFiles(x86)%\Git\bin\bash.exe"
 if not defined BASH if exist "%LocalAppData%\Programs\Git\bin\bash.exe" set "BASH=%LocalAppData%\Programs\Git\bin\bash.exe"
+if not defined BASH for /f "delims=" %%B in ('where bash.exe 2^>nul') do if not defined BASH (
+    if /i not "%%~fB"=="%SystemRoot%\System32\bash.exe" if /i not "%%~fB"=="%LocalAppData%\Microsoft\WindowsApps\bash.exe" set "BASH=%%~fB"
+)
 
 if not defined BASH (
     echo libseq: Git Bash not found. Install Git for Windows first. 1>&2
